@@ -6,6 +6,8 @@ const bodyParser = require('body-parser')
 const dns = require('node:dns');
 const { URL } = require('url');
 
+const urlDatabase = {};
+
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
@@ -34,7 +36,7 @@ app.post('/api/shorturl', function (req, res, next) {
     console.log(hostname)
   } catch (err) {
     console.log(err)
-    res.json({ error: 'Invalid URL' });
+    res.json({ error: 'invalid url' });
   }
 
 
@@ -47,17 +49,32 @@ app.post('/api/shorturl', function (req, res, next) {
     console.log('family: ', family)
     if (err) {
       console.log('Invalid Hostname')
-      res.json({ err: 'Invalid Hostname' });
+      res.json({ error: 'invalid url' });
       setError(err)
 
     } else {
-      let short_url = Math.floor(Math.random() * 100000).toString();
-      res.json({ original_url, short_url: '42' });
+      const generateShortUrl = () => Math.floor(Math.random() * 100000).toString();
+      urlDatabase[short_url] = generateShortUrl()
+      res.json({ original_url, short_url });
     }
 
   });
 
 });
+
+
+app.get('/api/shorturl/:short_url', (req, res) => {
+  const short_url = req.params.short_url;
+  const original_url = urlDatabase[short_url];
+
+  if (original_url) {
+    res.redirect(original_url);
+  } else {
+    res.json({ error: 'No short URL found for the given input' });
+  }
+
+
+})
 
 app.listen(port, function () {
   console.log(`Listening on port ${port}`);
